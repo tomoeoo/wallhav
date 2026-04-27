@@ -2,9 +2,11 @@
 ##  基于[Wallhaven](https://github.com/leoFitz1024/wallhaven)修改的壁纸管理工具
 ##
 ##
+- [点击下载](https://github.com/tomoeoo/wallhav/releases/tag/v4.0.3)
 ##
 ##
 ##
+
 <h1 align='center'>
   以下是原仓库信息
 </h1>
