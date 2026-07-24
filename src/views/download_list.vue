@@ -151,7 +151,6 @@ export default {
       localStorage.setItem("downloadFinishedList", JSON.stringify(this.$root.downloadFinishedList))
     },
     showInFolder(path) {
-      console.log(path)
       showItemInFolder(path).then(res => {
         if (!res.success) {
           this.$message({

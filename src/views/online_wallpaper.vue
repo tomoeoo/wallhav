@@ -1,5 +1,6 @@
 <template>
-  <imgPreview @close="closePreview" :showing="showImgPre" :imgInfo="preImgInfo"></imgPreview>
+  <imgPreview @close="closePreview" :showing="showImgPre" :imgInfo="preImgInfo" :imgList="preList"
+    :startIndex="preStartIndex"></imgPreview>
   <div id="WallHaven">
     <pageHeader :title="title"></pageHeader>
     <form id="searchbar" class="expanded" @click="resetSelect">
@@ -54,8 +55,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(line, i) in searchMeta.resolutionsArray">
-                    <td v-for="(rln, x) in line.item">
+                  <tr v-for="(line, i) in searchMeta.resolutionsArray" :key="i">
+                    <td v-for="(rln, x) in line.item" :key="x">
                       <input v-if="customParams.respickerLimitation !== 'atleast'" type="checkbox"
                         name="respicker-resolution" :id="'searchbar-respicker-' + (rln)" :value="rln"
                         v-model="customParams.resolutions" />
@@ -130,8 +131,8 @@
             <div class="colorpicker">
               <table class="label-table">
                 <tbody>
-                  <tr v-for="(line, i) in searchMeta.colorsArray">
-                    <td v-for="(colorItem, i) in line.item">
+                  <tr v-for="(line, i) in searchMeta.colorsArray" :key="i">
+                    <td v-for="(colorItem, ci) in line.item" :key="ci">
                       <input type="radio" v-model="customParams.color" name="search-colors"
                         :id="'search-colors-' + (colorItem)" :value="colorItem" />
                       <label :for="'search-colors-' + (colorItem)"
@@ -222,16 +223,17 @@
             </a>
           </header>
           <ul>
-            <li v-for="(liItem, index) in sectionItem">
+            <li v-for="(liItem, index) in sectionItem" :key="index">
               <figure class="thumb"
                 :class="'thumb-' + (liItem.id) + ' thumb-' + (liItem.purity) + ' thumb-' + (liItem.category)"
-                :data-wallpaper-id="liItem.id" style="width:300px;height:200px">
+                :data-wallpaper-id="liItem.id" style="width:300px;height:200px"
+                @contextmenu.prevent="openCtxMenu($event, liItem)">
                 <a class="thumb-btn thumb-btn-fav jsAnchor overlay-anchor" title="设为壁纸" @click="setBg(liItem)">
                   <i class="fas fa-fw fa-repeat-alt"></i>
                 </a>
-                <img alt="loading" loading="lazy" class="lazyload loaded" :data-src="liItem.thumbs.small"
-                  :src="liItem.thumbs.small" referrerpolicy="no-referrer" />
-                <a class="preview" @click="preview(liItem)"></a>
+                <img alt="loading" loading="lazy" class="lazyload loaded thumb-fade" :data-src="liItem.thumbs.small"
+                  :src="liItem.thumbs.small" referrerpolicy="no-referrer" @load="onImgLoad" />
+                <a class="preview" @click="handleThumbClick(liItem)" title="单击预览，双击设为壁纸"></a>
                 <div class="thumb-info">
                   <span class="wall-res">{{ this.$formatMulti(liItem.resolution) }}</span>
                   <a class="jsAnchor overlay-anchor wall-favs">{{ this.$formatFileSize(liItem.file_size) }}</a>
@@ -250,12 +252,18 @@
         <div class="error-span" v-show="error"><i class="fas fa-times"> <br />网络异常，请点击右上角刷新按钮重试。</i></div>
       </div>
     </main>
+    <div class="back-to-top-btn" v-show="showBackTop" @click="scrollTop" title="回到顶部">
+      <i class="far fa-lg fa-chevron-up"></i>
+    </div>
+    <contextMenu :visible="ctxMenu.visible" :x="ctxMenu.x" :y="ctxMenu.y" :items="ctxItems"
+      @close="ctxMenu.visible = false" @select="onCtxSelect"></contextMenu>
   </div>
 </template>
 
 <script>
 import { updatePageParams, changeBg } from "../statics/js/ipcRenderer"
 import imgPreview from "../components/img_preview.vue";
+import contextMenu from "../components/context_menu.vue";
 import pageHeader from "../components/page-header.vue";
 import { ElTooltip } from 'element-plus'
 import { getLocalStorage } from "../statics/js/utils"
@@ -272,6 +280,11 @@ export default {
       isCurrent: false,
       showImgPre: false,
       preImgInfo: {},
+      preList: [],
+      preStartIndex: 0,
+      clickTimer: null,
+      showBackTop: false,
+      ctxMenu: {visible: false, x: 0, y: 0, item: null},
       loading: false,
       error: false,
       apiKey: "",
@@ -394,6 +407,7 @@ export default {
   components: {
     pageHeader,
     imgPreview,
+    contextMenu,
     ElTooltip
   },
   methods: {
@@ -408,8 +422,41 @@ export default {
       this.showImgPre = value;
     },
     preview(imgItem) {
+      this.preList = this.flatList;
+      this.preStartIndex = Math.max(0, this.flatList.indexOf(imgItem));
       this.preImgInfo = imgItem
       this.showImgPre = true;
+    },
+    handleThumbClick(imgItem) {
+      if (this.clickTimer) {
+        clearTimeout(this.clickTimer);
+        this.clickTimer = null;
+        this.setBg(imgItem);
+      } else {
+        this.clickTimer = setTimeout(() => {
+          this.clickTimer = null;
+          this.preview(imgItem);
+        }, 220);
+      }
+    },
+    onImgLoad(e) {
+      if (e && e.target) e.target.classList.add('thumb-fade-in');
+    },
+    openCtxMenu(e, item) {
+      this.ctxMenu.item = item;
+      this.ctxMenu.x = e.clientX;
+      this.ctxMenu.y = e.clientY;
+      this.ctxMenu.visible = true;
+    },
+    onCtxSelect(i) {
+      const item = this.ctxMenu.item;
+      if (!item) return;
+      if (i === 0) this.preview(item);
+      else if (i === 1) this.setBg(item);
+      else if (i === 2) this.downloadImg(item);
+    },
+    scrollTop() {
+      window.scrollTo({top: 0, behavior: 'smooth'});
     },
     downloadImg(imgItem) {
       let info = {
@@ -503,11 +550,12 @@ export default {
       this.getParams.colors = this.customParams.color === 'none' ? null : this.customParams.color;
       let ratiosStr = this.customParams.ratios.join(',');
       this.getParams.ratios = ratiosStr === "" ? null : ratiosStr;
+      let customResolution = "";
       if (this.customParams.respickerCustomWidth !== "" && this.customParams.respickerCustomHeight !==
         "") {
-        this.getParams.atleast = this.customParams.respickerCustomWidth + "x" + this.customParams
+        customResolution = this.customParams.respickerCustomWidth + "x" + this.customParams
           .respickerCustomHeight;
-        this.customParams.resolutions.push(this.getParams.atleast);
+        this.getParams.atleast = customResolution;
       }
       if (this.customParams.respickerLimitation === "atleast") {
         if (this.customParams.resolution !== "" && this.getParams.atleast != null) {
@@ -515,7 +563,11 @@ export default {
         }
       } else {
         this.getParams.atleast = null;
-        let resolutionsStr = this.customParams.resolutions.join(",");
+        let resolutions = this.customParams.resolutions.slice();
+        if (customResolution !== "") {
+          resolutions.push(customResolution);
+        }
+        let resolutionsStr = resolutions.join(",");
         this.getParams.resolutions = resolutionsStr === "" ? null : resolutionsStr;
       }
     },
@@ -565,6 +617,7 @@ export default {
       })
     },
     scrollEvent() {
+      this.showBackTop = document.documentElement.scrollTop > 400;
       this.$nextTick(() => {
         if (document.body.scrollHeight - document.documentElement.scrollTop - document.body.clientHeight <= 200 &&
           !this.loading && this.pageData.currentPage < this.pageData.totalPage && this.isCurrent) {
@@ -639,6 +692,22 @@ export default {
       }
       return topRange;
     }
+  },
+  computed: {
+    flatList() {
+      let arr = [];
+      this.pageData.sections.forEach(section => {
+        arr = arr.concat(section);
+      });
+      return arr;
+    },
+    ctxItems() {
+      return [
+        {label: '预览大图', icon: 'far fa-expand'},
+        {label: '设为壁纸', icon: 'fas fa-repeat-alt'},
+        {label: '下载', icon: 'fas fa-download'}
+      ];
+    }
   }
 }
 </script>
@@ -689,5 +758,37 @@ export default {
   color: #ccc;
   outline: none;
   padding: 0.5em;
+}
+
+/* 缩略图淡入 */
+.thumb-fade {
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+.thumb-fade.thumb-fade-in {
+  opacity: 1;
+}
+
+/* 返回顶部 */
+.back-to-top-btn {
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  z-index: 500;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(34, 34, 34, .8);
+  color: #d7ce82;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+  transition: background .25s;
+}
+
+.back-to-top-btn:hover {
+  background: rgba(34, 34, 34, 1);
 }
 </style>

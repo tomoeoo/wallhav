@@ -154,7 +154,7 @@ class Wallhaven {
                         if (res === "") {
                             event.reply(APP_IPC.OPEN_FOLDER, {success: true, type: 'success', msg: 'success'})
                         } else {
-                            event.reply(APP_IPC.OPEN_FOLDER, {success: false, type: 'error', msg: 'res'})
+                            event.reply(APP_IPC.OPEN_FOLDER, {success: false, type: 'error', msg: res})
                         }
                     })
                 }
@@ -168,6 +168,7 @@ class Wallhaven {
                     event.reply(APP_IPC.SHOW_FILE_FOLDER, {success: false, type: 'error', msg: '文件已被删除！'})
                 } else {
                     shell.showItemInFolder(path)
+                    event.reply(APP_IPC.SHOW_FILE_FOLDER, {success: true, type: 'success', msg: 'success'})
                 }
             })
         })
@@ -242,7 +243,7 @@ class Wallhaven {
                 that.downloadList[url] = {...data}
                 that.resumeDownload(data)
             }
-            e.reply(`${DOWNLOAD_IPC.RESUME_DOWNLOAD}-url`, '已恢复下载')
+            e.reply(`${DOWNLOAD_IPC.RESUME_DOWNLOAD}-${url}`, {success: true, type: 'success', msg: '已恢复下载'})
         })
 
         // 取消下载
@@ -402,7 +403,9 @@ class Wallhaven {
     start(data) {
         this.localStorage = JSON.parse(data);
         if (this.localStorage.downloadDir === "") {
-            this.localStorage.downloadDir = app.getPath("downloads")
+            // 默认保存到系统图片文件夹
+            this.localStorage.downloadDir = app.getPath("pictures")
+            app.setPath("downloads", app.getPath("pictures"))
         } else {
             app.setPath("downloads", this.localStorage.downloadDir)
         }
@@ -687,7 +690,7 @@ class Wallhaven {
         if (this.localStorage.switchModel === 'online') {
             if ((0 < this.localStorage.pageIndex && this.localStorage.pageIndex < this.pageData.length) || (
                 this.localStorage.currentPage > 1)) {
-                if (0 < this.localStorage.pageIndex < this.pageData.length) {
+                if (this.localStorage.pageIndex > 0 && this.localStorage.pageIndex < this.pageData.length) {
                     this.localStorage.pageIndex--;
                     this.downAndChangeBg(this.pageData[this.localStorage.pageIndex])
                 } else {
@@ -738,7 +741,6 @@ class Wallhaven {
                 this.localStorage.currentPage = 1
                 this.localStorage.pageIndex = 0
                 this.updatePageData().then(r => {
-                    console.log(r)
                     this.downAndChangeBg(this.pageData[this.localStorage.pageIndex])
                 })
             }

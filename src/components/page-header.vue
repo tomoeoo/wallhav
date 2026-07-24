@@ -26,7 +26,7 @@ export default {
     },
     close(){
       localStorage.setItem("downloadList", JSON.stringify(this.$root.downloadList))
-      localStorage.setItem("downloadFinishedList", JSON.stringify(this.downloadFinishedList))
+      localStorage.setItem("downloadFinishedList", JSON.stringify(this.$root.downloadFinishedList))
       closeWindow()
     }
   },

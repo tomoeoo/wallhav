@@ -20,7 +20,7 @@ $route.path === '/download' ? 'download-bg' : $route.path === '/setting'? 'setti
           </router-link>
         </li>
         <li class="menu-item">
-          <router-link to="download" class="menu-native">
+          <router-link to="/download" class="menu-native">
             <i class="fas fa-inbox-in"></i>
             下载中心<span class="li-border"/>
           </router-link>
@@ -35,7 +35,7 @@ $route.path === '/download' ? 'download-bg' : $route.path === '/setting'? 'setti
           </router-link>
         </li>
         <li class="menu-item">
-          <router-link to="about" class="menu-native">
+          <router-link to="/about" class="menu-native">
             <i class="fas fa-info-circle"></i>
             关于<span class="li-border"/>
           </router-link>
@@ -51,7 +51,7 @@ $route.path === '/download' ? 'download-bg' : $route.path === '/setting'? 'setti
       <div style="margin-bottom: 5px">
       检测到新的版本{{ updateInfo.version }}，是否现在进行更新？
       </div>
-        <li v-for="item in updateInfo.releaseNotes">{{ item }}</li>
+        <li v-for="(item, i) in updateInfo.releaseNotes" :key="i">{{ item }}</li>
     </div>
     <template #footer>
       <span class="dialog-footer">
@@ -133,15 +133,10 @@ export default {
     window.addEventListener('resize', this.onresize);
     this.startApp()
   },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.onresize);
+  },
   watch: {
-    downloadListLen: {
-      deep: true,
-      handler(val) {
-        this.downloadListLen.sort(function (a, b) {
-          return b.time - a.time;
-        })
-      }
-    },
     downloadFinishedList: {
       deep: true,
       handler(val) {
@@ -229,8 +224,11 @@ export default {
       }
     },
     delDownRecorder(url) {
-      delete this.downloadFinishedList[url]
-      localStorage.setItem("downloadFinishedList", JSON.stringify(this.downloadFinishedList))
+      let index = this.downloadFinishedList.findIndex(item => item.url === url)
+      if (index > -1) {
+        this.downloadFinishedList.splice(index, 1)
+        localStorage.setItem("downloadFinishedList", JSON.stringify(this.downloadFinishedList))
+      }
     },
     startApp() {
       let localStorageMap = {

@@ -97,10 +97,6 @@ function createWindow() {
         }
     })
 
-
-    app.on('quit', () => {
-        app.releaseSingleInstanceLock();//释放所有的单例锁
-    });
 }
 
 // In this file you can include the rest of your app's specific main process

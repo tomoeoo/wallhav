@@ -28,6 +28,6 @@ export const sendDownloadUpdate = () => {
  */
 export const onDownloadProgress = (updateVersionDownloadProgress) => {
     window.ipcRenderer.on(IPC.UPDATE_DOWNLOAD_PROGRESS, function (progress) {
-        updateVersionDownloadProgress(info)
+        updateVersionDownloadProgress(progress)
     })
 }

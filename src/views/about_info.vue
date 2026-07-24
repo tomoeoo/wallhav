@@ -33,7 +33,7 @@
       <el-card class="info-card custom-card qr-card">
         <h3 style="font-size: larger">致谢名单</h3>
         <div class="user-center">
-          <div class="user-item item-center" v-for="user in acknowledgementList">
+          <div class="user-item item-center" v-for="user in acknowledgementList" :key="user.name">
               <img :src="user.avatar !== undefined && user.avatar !== '' ? user.avatar :  defaultAvatar"
                    class="rounded-full user-avatar"
                    loading="lazy">
@@ -45,12 +45,12 @@
         <h3 style="text-align: center; font-size: larger">更新日志</h3>
         <div class="version-box">
           <el-timeline>
-            <el-timeline-item v-for="(versionItem, i) in versions" class="custom-item"
+            <el-timeline-item v-for="(versionItem, i) in versions" class="custom-item" :key="i"
                               :timestamp="versionItem.releaseTime" placement="top">
               <el-card class="update-log-item-card">
                 <h3 class="custom-card-title">Version {{ versionItem.version }}</h3>
                 <ul class="fun-list">
-                  <li v-for="(noteItem, x) in versionItem.notes">{{ noteItem }}</li>
+                  <li v-for="(noteItem, x) in versionItem.notes" :key="x">{{ noteItem }}</li>
                 </ul>
               </el-card>
             </el-timeline-item>

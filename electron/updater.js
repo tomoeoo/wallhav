@@ -63,7 +63,7 @@ function checkUpdate(app, mainWindow) {
         //通知渲染进程，下载进度条界面UI展示
         const downloadProgress = {
             speed: progressObj.bytesPerSecond,
-            percentage: parseInt(progressObj.transferred / progressObj.total)
+            percentage: parseInt(progressObj.transferred / progressObj.total * 100)
         }
         mainWindow.webContents.send(IPC.UPDATE_DOWNLOAD_PROGRESS, downloadProgress);
     })

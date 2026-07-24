@@ -47,6 +47,7 @@ axios.interceptors.response.use(
                 type: 'error',
                 duration: 2000
             })
+            return Promise.reject(error);
         }
     }
 );

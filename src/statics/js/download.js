@@ -36,9 +36,17 @@ export const updateDownloadState = (updateData) => {
  * @param {*} data
  */
 export const resumeDownload = (data) => {
+    // data 可能是 JSON 字符串或对象，提取 url 用于匹配回复 channel
+    let url;
+    try {
+        const obj = typeof data === 'string' ? JSON.parse(data) : data;
+        url = obj.url;
+    } catch(e) {
+        url = undefined;
+    }
     window.ipcRenderer.send(DOWNLOAD_IPC.RESUME_DOWNLOAD, data)
     return new Promise((resolve, reject) => {
-        window.ipcRenderer.once(`${DOWNLOAD_IPC.RESUME_DOWNLOAD}-${data.url}`, (data) => resolve(data))
+        window.ipcRenderer.once(`${DOWNLOAD_IPC.RESUME_DOWNLOAD}-${url}`, (data) => resolve(data))
     })
 }
 
